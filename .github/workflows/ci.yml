@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: certchain
+          POSTGRES_PASSWORD: certchain
+          POSTGRES_DB: certchain
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://certchain:certchain@localhost:5432/certchain
+      JWT_SECRET: test-secret
+      ADMIN_EMAIL: admin@test.com
+      ADMIN_PASSWORD: testpass
+      RPC_URL: http://localhost:8545
+      PRIVATE_KEY: '0x0000000000000000000000000000000000000000000000000000000000000001'
+      CONTRACT_ADDRESS: '0x0000000000000000000000000000000000000000'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build shared package
+        run: pnpm --filter @certchain/shared build
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Compile contracts
+        run: pnpm --filter @certchain/contracts build
+
+      - name: Test contracts
+        run: pnpm --filter @certchain/contracts test
+
+      - name: Prisma generate and migrate
+        run: |
+          cd apps/api
+          npx prisma generate
+          npx prisma migrate deploy
+
+      - name: Test API
+        run: pnpm --filter @certchain/api test:cov
+
+      - name: Test web
+        run: pnpm --filter @certchain/web test
+
+      - name: Build API
+        run: pnpm --filter @certchain/api build
+
+      - name: Build web
+        run: pnpm --filter @certchain/web build
