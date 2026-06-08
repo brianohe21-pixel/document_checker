@@ -179,7 +179,7 @@ The script prints two values to add as GitHub variables.
 | `GCP_API_SERVICE`                | `certchain-api`                                                                     |
 | `GCP_WEB_SERVICE`                | `certchain-web`                                                                     |
 
-Optional (leave empty to auto-detect Cloud Run URLs):
+Optional (set after first deploy — **speeds up CI deploy ~40%**):
 
 | Name                | Example                                    |
 | ------------------- | ------------------------------------------ |
@@ -187,6 +187,8 @@ Optional (leave empty to auto-detect Cloud Run URLs):
 | `GCP_WEB_URL`       | `https://certchain-web-xxx.run.app`        |
 | `PUBLIC_VERIFY_URL` | `https://certchain-web-xxx.run.app/verify` |
 | `CORS_ORIGIN`       | `https://certchain-web-xxx.run.app`        |
+
+With `GCP_API_URL` set, deploy builds API + Web images in one parallel Cloud Build instead of two sequential builds.
 
 Optional (web build — donation & contact section):
 

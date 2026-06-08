@@ -1,5 +1,22 @@
 steps:
   - name: gcr.io/cloud-builders/docker
+    id: build-api
+    waitFor: ['-']
+    args:
+      - build
+      - -f
+      - apps/api/Dockerfile
+      - --cache-from
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/api:latest
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/api:${_TAG}
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/api:latest
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    id: build-web
+    waitFor: ['-']
     args:
       - build
       - -f
@@ -27,6 +44,8 @@ steps:
       - .
 
 images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/api:${_TAG}
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/api:latest
   - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/web:${_TAG}
   - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/web:latest
 
