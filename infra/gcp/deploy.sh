@@ -5,8 +5,12 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 if [[ ! -f infra/gcp/config.sh ]]; then
-  echo "Create infra/gcp/config.sh from infra/gcp/config.example.sh"
-  exit 1
+  if [[ -n "${GCP_PROJECT_ID:-}" ]]; then
+    bash infra/gcp/write-config-from-env.sh
+  else
+    echo "Create infra/gcp/config.sh from infra/gcp/config.example.sh"
+    exit 1
+  fi
 fi
 
 # shellcheck source=/dev/null

@@ -146,19 +146,55 @@ This creates Artifact Registry, Cloud SQL (PostgreSQL 16), and Secret Manager en
 
 ### 3. Deploy to Cloud Run
 
+Manual deploy:
+
 ```bash
 pnpm deploy:gcp
 ```
 
-This builds Docker images, deploys the API and Web to Cloud Run, and wires Cloud SQL + secrets.
+### 4. CI/CD deploy on `main`
 
-### 4. Seed admin user (first time)
+CI runs on `develop` and `main`. Every push to `main` runs tests and, if they pass, deploys to Cloud Run.
+
+**GitHub repository secret**
+
+| Name         | Value                              |
+| ------------ | ---------------------------------- |
+| `GCP_SA_KEY` | JSON key for a GCP service account |
+
+Service account roles: `Cloud Run Admin`, `Cloud Build Editor`, `Artifact Registry Writer`, `Service Account User`, `Storage Admin`.
+
+**GitHub repository variables** (Settings → Secrets and variables → Actions → Variables)
+
+| Name                | Example          |
+| ------------------- | ---------------- |
+| `GCP_PROJECT_ID`    | `certchain-open` |
+| `GCP_REGION`        | `us-central1`    |
+| `GCP_ARTIFACT_REPO` | `certchain`      |
+| `GCP_SQL_INSTANCE`  | `certchain-db`   |
+| `GCP_API_SERVICE`   | `certchain-api`  |
+| `GCP_WEB_SERVICE`   | `certchain-web`  |
+
+Optional (leave empty to auto-detect Cloud Run URLs):
+
+| Name                | Example                                    |
+| ------------------- | ------------------------------------------ |
+| `GCP_API_URL`       | `https://certchain-api-xxx.run.app`        |
+| `GCP_WEB_URL`       | `https://certchain-web-xxx.run.app`        |
+| `PUBLIC_VERIFY_URL` | `https://certchain-web-xxx.run.app/verify` |
+| `CORS_ORIGIN`       | `https://certchain-web-xxx.run.app`        |
+
+### 5. Seed admin user (first time)
 
 ```bash
 pnpm deploy:gcp:seed
 ```
 
-### 5. URLs
+Uses Cloud SQL Auth Proxy on port `15432` by default (avoids conflict with local Postgres on `5432`). Override with `PROXY_PORT=5433 pnpm deploy:gcp:seed` if needed.
+
+Requires `infra/gcp/secrets.env` with `DB_PASSWORD`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` (not the root `.env`).
+
+### 6. URLs
 
 After deploy, the script prints:
 
