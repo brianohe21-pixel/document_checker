@@ -65,4 +65,32 @@ describe('VerifyCertificateUseCase', () => {
     expect(result.valid).toBe(false);
     expect(result.studentName).toBe('Juan Perez');
   });
+
+  it('should match hash without 0x prefix on chain', async () => {
+    (mockBlockchain.verifyCertificate as jest.Mock).mockResolvedValueOnce({
+      documentHash: 'abc123hash',
+      issuer: '0xIssuer',
+      timestamp: 1700000000,
+      exists: true,
+    });
+    const result = await useCase.execute('cert-uuid');
+    expect(result.valid).toBe(true);
+  });
+
+  it('should return invalid when certificate does not exist on chain', async () => {
+    (mockBlockchain.verifyCertificate as jest.Mock).mockResolvedValueOnce({
+      documentHash: '0xabc123hash',
+      issuer: '0xIssuer',
+      timestamp: 1700000000,
+      exists: false,
+    });
+    const result = await useCase.execute('cert-uuid');
+    expect(result.valid).toBe(false);
+  });
+
+  it('should handle non-Error blockchain failures', async () => {
+    (mockBlockchain.verifyCertificate as jest.Mock).mockRejectedValueOnce('rpc unavailable');
+    const result = await useCase.execute('cert-uuid');
+    expect(result.valid).toBe(false);
+  });
 });

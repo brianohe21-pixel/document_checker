@@ -1,7 +1,9 @@
 import { ConfigService } from '@nestjs/config';
 import { EthersBlockchainAdapter } from './ethers-blockchain.adapter';
 
-const mockWait = jest.fn().mockResolvedValue({ hash: '0xabc123' });
+const mockGetCode = jest.fn().mockResolvedValue('0x6000');
+const mockGetAddress = jest.fn().mockResolvedValue('0xContract');
+const mockWait = jest.fn().mockResolvedValue({ hash: '0xabc123', status: 1 });
 const mockRegisterCertificate = jest.fn().mockResolvedValue({ wait: mockWait });
 const mockVerifyCertificate = jest.fn().mockResolvedValue({
   documentHash: '0xdeadbeef',
@@ -11,9 +13,12 @@ const mockVerifyCertificate = jest.fn().mockResolvedValue({
 });
 
 jest.mock('ethers', () => ({
-  JsonRpcProvider: jest.fn(),
+  JsonRpcProvider: jest.fn().mockImplementation(() => ({
+    getCode: mockGetCode,
+  })),
   Wallet: jest.fn().mockImplementation(() => ({})),
   Contract: jest.fn().mockImplementation(() => ({
+    getAddress: mockGetAddress,
     registerCertificate: mockRegisterCertificate,
     verifyCertificate: mockVerifyCertificate,
   })),
@@ -36,7 +41,8 @@ describe('EthersBlockchainAdapter', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockWait.mockResolvedValue({ hash: '0xabc123' });
+    mockGetCode.mockResolvedValue('0x6000');
+    mockWait.mockResolvedValue({ hash: '0xabc123', status: 1 });
   });
 
   it('should register certificate and return transaction hash', async () => {
@@ -44,6 +50,7 @@ describe('EthersBlockchainAdapter', () => {
     const txHash = await adapter.registerCertificate('cert-1', 'a'.repeat(64));
     expect(txHash).toBe('0xabc123');
     expect(mockRegisterCertificate).toHaveBeenCalled();
+    expect(mockGetCode).toHaveBeenCalledWith('0xContract');
   });
 
   it('should verify certificate on chain', async () => {
@@ -65,6 +72,22 @@ describe('EthersBlockchainAdapter', () => {
     const hash = '0x' + 'c'.repeat(64);
     await adapter.registerCertificate('cert-3', hash);
     expect(mockRegisterCertificate).toHaveBeenCalledWith('cert-3', hash);
+  });
+
+  it('should throw when no contract is deployed at address', async () => {
+    mockGetCode.mockResolvedValueOnce('0x');
+    const adapter = createAdapter();
+    await expect(adapter.registerCertificate('cert-1', 'a'.repeat(64))).rejects.toThrow(
+      'No contract deployed at CONTRACT_ADDRESS',
+    );
+  });
+
+  it('should throw when registration transaction fails', async () => {
+    mockWait.mockResolvedValueOnce({ hash: '0xfail', status: 0 });
+    const adapter = createAdapter();
+    await expect(adapter.registerCertificate('cert-1', 'a'.repeat(64))).rejects.toThrow(
+      'Blockchain registration transaction failed',
+    );
   });
 
   it('should throw when blockchain config is missing', async () => {
