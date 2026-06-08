@@ -12,6 +12,7 @@
     "deploy:gcp": "bash infra/gcp/deploy.sh",
     "deploy:gcp:seed": "bash infra/gcp/seed.sh",
     "deploy:gcp:rotate-secrets": "bash infra/gcp/rotate-secrets.sh",
+    "deploy:gcp:setup-github-wif": "bash infra/gcp/setup-github-wif.sh",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write \"**/*.{ts,tsx,json,md,sol}\"",

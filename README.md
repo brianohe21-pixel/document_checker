@@ -156,24 +156,28 @@ pnpm deploy:gcp
 
 CI runs on `develop` and `main`. Every push to `main` runs tests and, if they pass, deploys to Cloud Run.
 
-**GitHub repository secret**
+**One-time GCP setup (Workload Identity Federation)**
 
-| Name         | Value                              |
-| ------------ | ---------------------------------- |
-| `GCP_SA_KEY` | JSON key for a GCP service account |
+JSON keys are blocked on this project (`iam.disableServiceAccountKeyCreation`). Use WIF instead:
 
-Service account roles: `Cloud Run Admin`, `Cloud Build Editor`, `Artifact Registry Writer`, `Service Account User`, `Storage Admin`.
+```bash
+bash infra/gcp/setup-github-wif.sh
+```
+
+The script prints two values to add as GitHub variables.
 
 **GitHub repository variables** (Settings → Secrets and variables → Actions → Variables)
 
-| Name                | Example          |
-| ------------------- | ---------------- |
-| `GCP_PROJECT_ID`    | `certchain-open` |
-| `GCP_REGION`        | `us-central1`    |
-| `GCP_ARTIFACT_REPO` | `certchain`      |
-| `GCP_SQL_INSTANCE`  | `certchain-db`   |
-| `GCP_API_SERVICE`   | `certchain-api`  |
-| `GCP_WEB_SERVICE`   | `certchain-web`  |
+| Name                             | Example                                                                             |
+| -------------------------------- | ----------------------------------------------------------------------------------- |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | `projects/123456789/locations/global/workloadIdentityPools/github/providers/github` |
+| `GCP_SERVICE_ACCOUNT`            | `github-actions-deploy@certchain-open.iam.gserviceaccount.com`                      |
+| `GCP_PROJECT_ID`                 | `certchain-open`                                                                    |
+| `GCP_REGION`                     | `us-central1`                                                                       |
+| `GCP_ARTIFACT_REPO`              | `certchain`                                                                         |
+| `GCP_SQL_INSTANCE`               | `certchain-db`                                                                      |
+| `GCP_API_SERVICE`                | `certchain-api`                                                                     |
+| `GCP_WEB_SERVICE`                | `certchain-web`                                                                     |
 
 Optional (leave empty to auto-detect Cloud Run URLs):
 

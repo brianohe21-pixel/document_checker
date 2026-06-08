@@ -91,6 +91,10 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      id-token: write
+
     concurrency:
       group: deploy-main
       cancel-in-progress: false
@@ -103,12 +107,17 @@ jobs:
 
       - name: Validate deploy configuration
         env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
           GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
           GCP_REGION: ${{ vars.GCP_REGION }}
         run: |
-          if [[ -z "${GCP_SA_KEY}" ]]; then
-            echo "::error::Missing GitHub secret GCP_SA_KEY"
+          if [[ -z "${GCP_WORKLOAD_IDENTITY_PROVIDER}" ]]; then
+            echo "::error::Missing GitHub variable GCP_WORKLOAD_IDENTITY_PROVIDER"
+            exit 1
+          fi
+          if [[ -z "${GCP_SERVICE_ACCOUNT}" ]]; then
+            echo "::error::Missing GitHub variable GCP_SERVICE_ACCOUNT"
             exit 1
           fi
           if [[ -z "${GCP_PROJECT_ID}" ]]; then
@@ -123,7 +132,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
