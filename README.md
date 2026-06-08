@@ -188,6 +188,17 @@ Optional (leave empty to auto-detect Cloud Run URLs):
 | `PUBLIC_VERIFY_URL` | `https://certchain-web-xxx.run.app/verify` |
 | `CORS_ORIGIN`       | `https://certchain-web-xxx.run.app`        |
 
+Optional (web build — donation & contact section):
+
+| Name                                | Example                                      |
+| ----------------------------------- | -------------------------------------------- |
+| `NEXT_PUBLIC_DONATE_CRYPTO_ADDRESS` | `0x33a2C052f36A2DD6F2FaD12BA47E492647AE0b60` |
+| `NEXT_PUBLIC_DONATE_CRYPTO_LABEL`   | `Polygon`                                    |
+| `NEXT_PUBLIC_DONATE_GITHUB_URL`     | `https://github.com/sponsors/your-user`      |
+| `NEXT_PUBLIC_DONATE_KOFI_URL`       | `https://ko-fi.com/your-user`                |
+| `NEXT_PUBLIC_CONTACT_NAME`          | `Brayan Riaño` (default in code if empty)    |
+| `NEXT_PUBLIC_CONTACT_WHATSAPP`      | `573223117078` (default in code if empty)    |
+
 ### 5. Seed admin user (first time)
 
 ```bash

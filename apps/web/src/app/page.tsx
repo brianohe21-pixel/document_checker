@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { DonateSection } from '@/components/DonateSection';
+import { getContactInfo, getDonationMethods, shouldShowSupportSection } from '@/lib/donate';
 
 const steps = [
   {
@@ -24,6 +26,9 @@ const steps = [
 ];
 
 export default function HomePage() {
+  const donationMethods = getDonationMethods();
+  const contact = getContactInfo();
+
   return (
     <div>
       <section className="bg-gradient-to-br from-brand-900 to-brand-600 px-4 py-24 text-white">
@@ -82,6 +87,10 @@ export default function HomePage() {
           </code>
         </div>
       </section>
+
+      {shouldShowSupportSection() && (
+        <DonateSection methods={donationMethods} maintainerName={contact.name} />
+      )}
     </div>
   );
 }
