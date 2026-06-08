@@ -1,0 +1,20 @@
+{
+  "name": "@certchain/contracts",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+    "deploy:amoy": "hardhat run scripts/deploy.ts --network amoy",
+    "verify:amoy": "hardhat run scripts/verify.ts --network amoy",
+    "dev": "node scripts/dev-node.mjs"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "dotenv": "^16.4.7",
+    "hardhat": "^2.22.17",
+    "typescript": "^5.7.2"
+  }
+}

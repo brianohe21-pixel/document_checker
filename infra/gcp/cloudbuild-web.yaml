@@ -1,0 +1,29 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - apps/web/Dockerfile
+      - --build-arg
+      - NEXT_PUBLIC_API_URL=${_NEXT_PUBLIC_API_URL}
+      - --build-arg
+      - NEXT_PUBLIC_DONATE_GITHUB_URL=${_NEXT_PUBLIC_DONATE_GITHUB_URL}
+      - --build-arg
+      - NEXT_PUBLIC_DONATE_CRYPTO_ADDRESS=${_NEXT_PUBLIC_DONATE_CRYPTO_ADDRESS}
+      - --build-arg
+      - NEXT_PUBLIC_DONATE_CRYPTO_LABEL=${_NEXT_PUBLIC_DONATE_CRYPTO_LABEL}
+      - --build-arg
+      - NEXT_PUBLIC_DONATE_KOFI_URL=${_NEXT_PUBLIC_DONATE_KOFI_URL}
+      - --build-arg
+      - NEXT_PUBLIC_CONTACT_NAME=${_NEXT_PUBLIC_CONTACT_NAME}
+      - --build-arg
+      - NEXT_PUBLIC_CONTACT_WHATSAPP=${_NEXT_PUBLIC_CONTACT_WHATSAPP}
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/web:${_TAG}
+      - .
+
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/web:${_TAG}
+
+options:
+  logging: CLOUD_LOGGING_ONLY
