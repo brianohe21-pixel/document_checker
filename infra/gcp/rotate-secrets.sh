@@ -29,6 +29,8 @@ update_secret certchain-admin-password "${ADMIN_PASSWORD}"
 update_secret certchain-rpc-url "${RPC_URL}"
 update_secret certchain-private-key "${PRIVATE_KEY}"
 update_secret certchain-contract-address "${CONTRACT_ADDRESS}"
+update_secret certchain-resend-api-key "${RESEND_API_KEY:-}"
+update_secret certchain-email-from "${EMAIL_FROM:-CertChain <onboarding@resend.dev>}"
 
 if [[ -n "${DB_PASSWORD:-}" ]]; then
   CONNECTION_NAME="$(gcloud sql instances describe "${GCP_SQL_INSTANCE}" --format='value(connectionName)')"

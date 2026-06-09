@@ -18,9 +18,15 @@
     "format": "prettier --write \"**/*.{ts,tsx,json,md,sol}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,json,md,sol}\"",
     "test": "pnpm -r test",
-    "prepare": "husky"
+    "prepare": "husky",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm --filter @certchain/shared build && changeset publish",
+    "publish:shared": "pnpm --filter @certchain/shared publish --access public --no-git-checks",
+    "publish:shared:dry-run": "pnpm --filter @certchain/shared publish --dry-run --access public --no-git-checks"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.2",
     "@eslint/js": "^9.17.0",
     "eslint": "^9.17.0",
     "typescript-eslint": "^8.18.0",

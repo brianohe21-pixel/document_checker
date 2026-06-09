@@ -26,6 +26,7 @@ describe('CertificateRegistry', () => {
     expect(result.documentHash).to.equal(documentHash);
     expect(result.issuer).to.equal(issuer.address);
     expect(result.timestamp).to.be.greaterThan(0);
+    expect(result.revoked).to.equal(false);
   });
 
   it('should return non-existent certificate', async () => {
@@ -34,6 +35,7 @@ describe('CertificateRegistry', () => {
     expect(result.documentHash).to.equal(ethers.ZeroHash);
     expect(result.issuer).to.equal(ethers.ZeroAddress);
     expect(result.timestamp).to.equal(0);
+    expect(result.revoked).to.equal(false);
   });
 
   it('should reject duplicate certificateId', async () => {
@@ -60,6 +62,32 @@ describe('CertificateRegistry', () => {
   it('should reject empty hash', async () => {
     await expect(registry.registerCertificate(certificateId, ethers.ZeroHash)).to.be.revertedWith(
       'CertificateRegistry: empty hash',
+    );
+  });
+
+  it('should revoke a certificate', async () => {
+    await registry.registerCertificate(certificateId, documentHash);
+
+    await expect(registry.revokeCertificate(certificateId))
+      .to.emit(registry, 'CertificateRevoked')
+      .withArgs(certificateId, issuer.address, (value: bigint) => value > 0n);
+
+    const result = await registry.verifyCertificate(certificateId);
+    expect(result.exists).to.equal(true);
+    expect(result.revoked).to.equal(true);
+  });
+
+  it('should reject revoking non-existent certificate', async () => {
+    await expect(registry.revokeCertificate('unknown')).to.be.revertedWith(
+      'CertificateRegistry: certificate not found',
+    );
+  });
+
+  it('should reject double revocation', async () => {
+    await registry.registerCertificate(certificateId, documentHash);
+    await registry.revokeCertificate(certificateId);
+    await expect(registry.revokeCertificate(certificateId)).to.be.revertedWith(
+      'CertificateRegistry: certificate already revoked',
     );
   });
 });

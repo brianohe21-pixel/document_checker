@@ -1,12 +1,44 @@
 {
   "name": "@certchain/shared",
   "version": "1.0.0",
-  "private": true,
+  "description": "Shared TypeScript types, constants, and CertificateRegistry ABI for CertChain Open",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/brianohe21-pixel/document_checker.git",
+    "directory": "packages/shared"
+  },
+  "bugs": {
+    "url": "https://github.com/brianohe21-pixel/document_checker/issues"
+  },
+  "homepage": "https://github.com/brianohe21-pixel/document_checker/tree/main/packages/shared#readme",
+  "keywords": [
+    "certchain",
+    "blockchain",
+    "certificates",
+    "credentials",
+    "polygon",
+    "typescript"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "prepublishOnly": "pnpm run build",
     "test": "echo \"No tests in shared\""
   },
   "devDependencies": {

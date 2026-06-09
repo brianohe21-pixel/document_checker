@@ -50,6 +50,17 @@ export class EthersBlockchainAdapter implements BlockchainPort {
     return receipt.hash as string;
   }
 
+  async revokeCertificate(certificateId: string): Promise<string> {
+    const contract = this.getContract();
+    const tx = await contract.revokeCertificate(certificateId);
+    const receipt = await tx.wait();
+    if (receipt.status !== 1) {
+      throw new Error('Blockchain revocation transaction failed');
+    }
+    this.logger.log(`Certificate ${certificateId} revoked. Tx: ${receipt.hash}`);
+    return receipt.hash as string;
+  }
+
   async verifyCertificate(certificateId: string): Promise<OnChainCertificate> {
     const contract = this.getContract();
     const result = await contract.verifyCertificate(certificateId);
@@ -58,6 +69,7 @@ export class EthersBlockchainAdapter implements BlockchainPort {
       issuer: result.issuer as string,
       timestamp: Number(result.timestamp),
       exists: result.exists as boolean,
+      revoked: result.revoked as boolean,
     };
   }
 }

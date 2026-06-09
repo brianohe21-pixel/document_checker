@@ -32,7 +32,9 @@ services:
       CONTRACT_ADDRESS: ${CONTRACT_ADDRESS}
       PUBLIC_VERIFY_URL: ${PUBLIC_VERIFY_URL:-http://localhost:3000/verify}
       PORT: 3001
-      CORS_ORIGIN: http://localhost:3000
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://localhost:3002}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-CertChain <onboarding@resend.dev>}
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,6 +47,7 @@ services:
       - '3000:3000'
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_ADMIN_URL: ${NEXT_PUBLIC_ADMIN_URL:-http://localhost:3002}
     depends_on:
       - api
 

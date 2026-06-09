@@ -42,10 +42,16 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
 
       <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
         <div className="mb-6 text-center">
-          <VerificationBadge valid={data.valid} />
+          <VerificationBadge valid={data.valid} status={data.status} />
         </div>
 
-        {!data.valid && (
+        {data.status === 'REVOKED' && data.revokedReason && (
+          <p className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
+            This certificate has been revoked. Reason: {data.revokedReason}
+          </p>
+        )}
+
+        {!data.valid && data.status !== 'REVOKED' && (
           <p className="mb-6 rounded-lg bg-amber-50 px-4 py-3 text-center text-sm text-amber-800">
             The certificate exists in the registry but could not be verified on blockchain. If you
             restarted the local node, re-deploy with{' '}

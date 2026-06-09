@@ -111,6 +111,8 @@ create_or_update_secret certchain-admin-password "${ADMIN_PASSWORD}"
 create_or_update_secret certchain-rpc-url "${RPC_URL}"
 create_or_update_secret certchain-private-key "${PRIVATE_KEY}"
 create_or_update_secret certchain-contract-address "${CONTRACT_ADDRESS}"
+create_or_update_secret certchain-resend-api-key "${RESEND_API_KEY:-}"
+create_or_update_secret certchain-email-from "${EMAIL_FROM:-CertChain <onboarding@resend.dev>}"
 
 if [[ -n "${DATABASE_URL}" ]]; then
   create_or_update_secret certchain-database-url "${DATABASE_URL}"
@@ -141,7 +143,7 @@ grant_role "serviceAccount:${CLOUD_BUILD_SA}" "roles/artifactregistry.writer"
 grant_role "serviceAccount:${CLOUD_BUILD_SA}" "roles/run.admin"
 grant_role "serviceAccount:${CLOUD_BUILD_SA}" "roles/iam.serviceAccountUser"
 
-for secret in certchain-jwt-secret certchain-admin-email certchain-admin-password certchain-rpc-url certchain-private-key certchain-contract-address certchain-database-url; do
+for secret in certchain-jwt-secret certchain-admin-email certchain-admin-password certchain-rpc-url certchain-private-key certchain-contract-address certchain-resend-api-key certchain-email-from certchain-database-url; do
   if gcloud secrets describe "${secret}" >/dev/null 2>&1; then
     gcloud secrets add-iam-policy-binding "${secret}" \
       --member="serviceAccount:${COMPUTE_SA}" \

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? 'http://localhost:3002';
+
 export const metadata: Metadata = {
   title: 'CertChain Open',
   description: 'Open source academic certificate issuance and verification on blockchain',
@@ -19,7 +21,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <a href="/" className="text-gray-600 hover:text-brand-600">
                 Home
               </a>
-              <a href="/admin" className="text-gray-600 hover:text-brand-600">
+              <a href="/verify" className="text-gray-600 hover:text-brand-600">
+                Verify
+              </a>
+              <a href={ADMIN_URL} className="text-gray-600 hover:text-brand-600">
                 Admin
               </a>
               <a

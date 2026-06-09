@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsNotEmpty, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsDateString, IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class IssueCertificateDto {
   @ApiProperty({ example: 'Juan Perez' })
@@ -15,4 +15,9 @@ export class IssueCertificateDto {
   @ApiProperty({ example: '2026-06-01' })
   @IsDateString()
   issueDate!: string;
+
+  @ApiPropertyOptional({ example: 'student@example.com' })
+  @IsOptional()
+  @IsEmail()
+  studentEmail?: string;
 }

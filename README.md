@@ -6,17 +6,20 @@ Open source platform for issuing and verifying academic certificates on blockcha
 
 - Issue digital certificates with PDF generation and QR codes
 - Register SHA-256 document hashes on Polygon Amoy testnet
-- Public certificate verification without authentication
-- JWT-protected admin issuance API
+- Public certificate verification by ID or PDF upload
+- On-chain and database certificate revocation
+- Email delivery to students via Resend (optional)
+- JWT-protected admin API (UI in separate `document_checker_adm` repo)
 - PolygonScan integration for transaction exploration
 
 ## Architecture
 
 ```
-apps/web        → Next.js 15 frontend
-apps/api        → NestJS backend (hexagonal architecture)
+apps/web           → Next.js 15 public frontend
+apps/api           → NestJS backend (hexagonal architecture)
+document_checker_adm → Next.js 15 admin panel (separate repo)
 packages/contracts → Solidity smart contracts (Hardhat)
-packages/shared → Shared TypeScript types and ABI
+packages/shared    → Shared TypeScript types and ABI
 ```
 
 ## Requirements
@@ -42,17 +45,21 @@ cp .env.example .env
 
 Edit `.env` with your values:
 
-| Variable              | Description                          |
-| --------------------- | ------------------------------------ |
-| `DATABASE_URL`        | PostgreSQL connection string         |
-| `JWT_SECRET`          | Secret for JWT signing               |
-| `ADMIN_EMAIL`         | Admin user email for seed            |
-| `ADMIN_PASSWORD`      | Admin user password for seed         |
-| `RPC_URL`             | Polygon Amoy RPC endpoint            |
-| `PRIVATE_KEY`         | Issuer wallet private key            |
-| `CONTRACT_ADDRESS`    | Deployed CertificateRegistry address |
-| `PUBLIC_VERIFY_URL`   | Base URL for QR codes                |
-| `NEXT_PUBLIC_API_URL` | API URL for frontend                 |
+| Variable                | Description                           |
+| ----------------------- | ------------------------------------- |
+| `DATABASE_URL`          | PostgreSQL connection string          |
+| `JWT_SECRET`            | Secret for JWT signing                |
+| `ADMIN_EMAIL`           | Admin user email for seed             |
+| `ADMIN_PASSWORD`        | Admin user password for seed          |
+| `RPC_URL`               | Polygon Amoy RPC endpoint             |
+| `PRIVATE_KEY`           | Issuer wallet private key             |
+| `CONTRACT_ADDRESS`      | Deployed CertificateRegistry address  |
+| `PUBLIC_VERIFY_URL`     | Base URL for QR codes                 |
+| `NEXT_PUBLIC_API_URL`   | API URL for frontend                  |
+| `NEXT_PUBLIC_ADMIN_URL` | Admin panel URL for public site links |
+| `CORS_ORIGIN`           | Comma-separated allowed origins       |
+| `RESEND_API_KEY`        | Resend API key for student emails     |
+| `EMAIL_FROM`            | Sender address for certificate emails |
 
 ### 3. Start PostgreSQL
 
@@ -104,6 +111,7 @@ pnpm setup:local-blockchain
 
 - Frontend: http://localhost:3000
 - API: http://localhost:3001
+- Admin: http://localhost:3002 (run `document_checker_adm` separately)
 - Swagger: http://localhost:3001/api/docs
 
 ## Docker
@@ -232,11 +240,67 @@ After deploy, the script prints:
 
 ## API Endpoints
 
-| Method | Endpoint                 | Auth | Description         |
-| ------ | ------------------------ | ---- | ------------------- |
-| POST   | `/auth/login`            | No   | Admin login         |
-| POST   | `/certificates`          | JWT  | Issue certificate   |
-| GET    | `/verify/:certificateId` | No   | Public verification |
+| Method | Endpoint                   | Auth | Description                   |
+| ------ | -------------------------- | ---- | ----------------------------- |
+| POST   | `/auth/login`              | No   | Admin login                   |
+| POST   | `/certificates`            | JWT  | Issue certificate             |
+| GET    | `/certificates`            | JWT  | List certificates (paginated) |
+| POST   | `/certificates/:id/revoke` | JWT  | Revoke certificate            |
+| GET    | `/verify/:certificateId`   | No   | Public verification by ID     |
+| POST   | `/verify/upload`           | No   | Public verification by PDF    |
+
+## Using as a package
+
+Shared types, constants, and the CertificateRegistry ABI are published on npm:
+
+```bash
+npm install @certchain/shared
+```
+
+```typescript
+import { VerifyCertificateResponse, CertificateRegistryABI } from '@certchain/shared';
+```
+
+- npm: https://www.npmjs.com/package/@certchain/shared
+- Changelog: [packages/shared/CHANGELOG.md](packages/shared/CHANGELOG.md)
+
+### Versioning policy
+
+| Bump  | When                                            |
+| ----- | ----------------------------------------------- |
+| patch | Docs, constants without breaking changes        |
+| minor | New optional fields in types, new exports       |
+| major | Removed/renamed types, incompatible ABI changes |
+
+The API, web app, and contracts are self-hosted from this repo. `@certchain/shared` is for integrators and the commercial admin product.
+
+### Publishing (maintainers)
+
+1. Create npm org `@certchain` and an Automation token.
+2. Add `NPM_TOKEN` to GitHub Actions secrets for this repository.
+3. First release (one time): `pnpm publish:shared` (requires `npm login` or `NPM_TOKEN` in the environment)
+4. Later releases: merge a PR with a `.changeset` file; the [release workflow](.github/workflows/release.yml) versions and publishes via Changesets.
+
+Dry-run before publish:
+
+```bash
+pnpm publish:shared:dry-run
+```
+
+## Admin Panel
+
+The commercial admin UI lives in the separate `document_checker_adm` repository and consumes `@certchain/shared` from npm:
+
+```bash
+cd ../document_checker_adm
+cp .env.example .env
+npm install
+npm run dev
+```
+
+For local development against unpublished shared types, use `npm link` — see `document_checker_adm/.env.example`.
+
+Redeploy the smart contract after upgrading to v2 (revocation support) and update `CONTRACT_ADDRESS`. Certificates issued on the previous contract cannot be revoked on-chain.
 
 ## Testing
 

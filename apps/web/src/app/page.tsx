@@ -25,6 +25,8 @@ const steps = [
   },
 ];
 
+const ADMIN_URL = process.env.NEXT_PUBLIC_ADMIN_URL ?? 'http://localhost:3002';
+
 export default function HomePage() {
   const donationMethods = getDonationMethods();
   const contact = getContactInfo();
@@ -39,11 +41,17 @@ export default function HomePage() {
             Secure, transparent, and auditable.
           </p>
           <div className="flex justify-center gap-4">
-            <Link
-              href="/admin"
+            <a
+              href={ADMIN_URL}
               className="rounded-lg bg-white px-6 py-3 font-semibold text-brand-700 hover:bg-brand-50"
             >
               Issue Certificate
+            </a>
+            <Link
+              href="/verify"
+              className="rounded-lg border border-white/30 px-6 py-3 font-semibold hover:bg-white/10"
+            >
+              Verify Certificate
             </Link>
             <a
               href="https://github.com/brianohe21-pixel/document_checker"
@@ -79,8 +87,8 @@ export default function HomePage() {
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="mb-4 text-2xl font-bold">Public Verification</h2>
           <p className="mb-6 text-gray-600">
-            Scan the QR code on any certificate or enter the certificate ID in the verification URL.
-            No login required.
+            Scan the QR code on any certificate, upload the PDF, or enter the certificate ID in the
+            verification URL. No login required.
           </p>
           <code className="rounded bg-gray-100 px-4 py-2 text-sm text-brand-700">
             /verify/&#123;certificateId&#125;

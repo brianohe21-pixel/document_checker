@@ -44,3 +44,20 @@ export async function verifyCertificate(certificateId: string): Promise<VerifyCe
   if (!res.ok) throw new Error('Certificate not found');
   return res.json();
 }
+
+export async function verifyCertificateByPdf(file: File): Promise<VerifyCertificateResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${API_URL}/verify/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message ?? 'Verification failed');
+  }
+
+  return res.json();
+}

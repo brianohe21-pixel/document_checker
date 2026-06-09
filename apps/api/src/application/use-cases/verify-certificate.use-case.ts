@@ -1,10 +1,11 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { BLOCKCHAIN_NAME, VerifyCertificateResponse } from '@certchain/shared';
+import { VerifyCertificateResponse } from '@certchain/shared';
 import {
   CERTIFICATE_REPOSITORY,
   CertificateRepositoryPort,
 } from '../../domain/ports/certificate.repository.port';
 import { BLOCKCHAIN_PORT, BlockchainPort } from '../../domain/ports/blockchain.port';
+import { buildVerifyResponse } from '../helpers/certificate-verification.helper';
 
 @Injectable()
 export class VerifyCertificateUseCase {
@@ -23,31 +24,16 @@ export class VerifyCertificateUseCase {
       throw new NotFoundException('Certificate not found');
     }
 
-    let valid = false;
+    let onChain = null;
 
     try {
-      const onChain = await this.blockchain.verifyCertificate(certificateId);
-      const normalizedOnChainHash = onChain.documentHash.startsWith('0x')
-        ? onChain.documentHash.slice(2)
-        : onChain.documentHash;
-
-      valid =
-        onChain.exists &&
-        normalizedOnChainHash.toLowerCase() === certificate.documentHash.toLowerCase();
+      onChain = await this.blockchain.verifyCertificate(certificateId);
     } catch (error) {
       this.logger.warn(
         `On-chain verification failed for ${certificateId}: ${error instanceof Error ? error.message : error}`,
       );
     }
 
-    return {
-      valid,
-      studentName: certificate.studentName,
-      courseName: certificate.courseName,
-      issueDate: certificate.issueDate.toISOString().split('T')[0],
-      documentHash: certificate.documentHash,
-      blockchain: BLOCKCHAIN_NAME,
-      transactionHash: certificate.transactionHash,
-    };
+    return buildVerifyResponse(certificate, onChain);
   }
 }

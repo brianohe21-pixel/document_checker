@@ -11,4 +11,9 @@ describe('VerificationBadge', () => {
     render(<VerificationBadge valid={false} />);
     expect(screen.getByText('Invalid')).toBeInTheDocument();
   });
+
+  it('renders Revoked badge', () => {
+    render(<VerificationBadge valid={false} status="REVOKED" />);
+    expect(screen.getByText('Revoked')).toBeInTheDocument();
+  });
 });

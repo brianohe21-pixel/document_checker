@@ -7,6 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum CertificateStatus {
+  ACTIVE
+  REVOKED
+}
+
 model User {
   id           String   @id @default(uuid()) @db.Uuid
   email        String   @unique
@@ -17,14 +22,19 @@ model User {
 }
 
 model Certificate {
-  id              String   @id @default(uuid()) @db.Uuid
-  certificateId   String   @unique @map("certificate_id")
-  studentName     String   @map("student_name")
-  courseName      String   @map("course_name")
-  issueDate       DateTime @map("issue_date") @db.Date
-  documentHash    String   @map("document_hash")
-  transactionHash String   @map("transaction_hash")
-  createdAt       DateTime @default(now()) @map("created_at")
+  id                    String            @id @default(uuid()) @db.Uuid
+  certificateId         String            @unique @map("certificate_id")
+  studentName           String            @map("student_name")
+  studentEmail          String?           @map("student_email")
+  courseName            String            @map("course_name")
+  issueDate             DateTime          @map("issue_date") @db.Date
+  documentHash          String            @map("document_hash")
+  transactionHash       String            @map("transaction_hash")
+  status                CertificateStatus @default(ACTIVE)
+  revokedAt             DateTime?         @map("revoked_at")
+  revokedReason         String?           @map("revoked_reason")
+  revokeTransactionHash String?           @map("revoke_transaction_hash")
+  createdAt             DateTime          @default(now()) @map("created_at")
 
   @@map("certificates")
 }

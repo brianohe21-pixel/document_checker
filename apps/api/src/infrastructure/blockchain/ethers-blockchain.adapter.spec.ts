@@ -5,11 +5,13 @@ const mockGetCode = jest.fn().mockResolvedValue('0x6000');
 const mockGetAddress = jest.fn().mockResolvedValue('0xContract');
 const mockWait = jest.fn().mockResolvedValue({ hash: '0xabc123', status: 1 });
 const mockRegisterCertificate = jest.fn().mockResolvedValue({ wait: mockWait });
+const mockRevokeCertificate = jest.fn().mockResolvedValue({ wait: mockWait });
 const mockVerifyCertificate = jest.fn().mockResolvedValue({
   documentHash: '0xdeadbeef',
   issuer: '0xIssuer',
   timestamp: 1700000000n,
   exists: true,
+  revoked: false,
 });
 
 jest.mock('ethers', () => ({
@@ -20,6 +22,7 @@ jest.mock('ethers', () => ({
   Contract: jest.fn().mockImplementation(() => ({
     getAddress: mockGetAddress,
     registerCertificate: mockRegisterCertificate,
+    revokeCertificate: mockRevokeCertificate,
     verifyCertificate: mockVerifyCertificate,
   })),
 }));
@@ -59,6 +62,22 @@ describe('EthersBlockchainAdapter', () => {
     expect(result.exists).toBe(true);
     expect(result.documentHash).toBe('0xdeadbeef');
     expect(result.timestamp).toBe(1700000000);
+    expect(result.revoked).toBe(false);
+  });
+
+  it('should revoke certificate and return transaction hash', async () => {
+    const adapter = createAdapter();
+    const txHash = await adapter.revokeCertificate('cert-1');
+    expect(txHash).toBe('0xabc123');
+    expect(mockRevokeCertificate).toHaveBeenCalledWith('cert-1');
+  });
+
+  it('should throw when revocation transaction fails', async () => {
+    mockWait.mockResolvedValueOnce({ hash: '0xfail', status: 0 });
+    const adapter = createAdapter();
+    await expect(adapter.revokeCertificate('cert-1')).rejects.toThrow(
+      'Blockchain revocation transaction failed',
+    );
   });
 
   it('should prefix hash with 0x when registering', async () => {

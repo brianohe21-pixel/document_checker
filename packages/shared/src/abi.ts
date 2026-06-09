@@ -11,12 +11,20 @@ export const CertificateRegistryABI = [
   },
   {
     inputs: [{ internalType: 'string', name: 'certificateId', type: 'string' }],
+    name: 'revokeCertificate',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ internalType: 'string', name: 'certificateId', type: 'string' }],
     name: 'verifyCertificate',
     outputs: [
       { internalType: 'bytes32', name: 'documentHash', type: 'bytes32' },
       { internalType: 'address', name: 'issuer', type: 'address' },
       { internalType: 'uint256', name: 'timestamp', type: 'uint256' },
       { internalType: 'bool', name: 'exists', type: 'bool' },
+      { internalType: 'bool', name: 'revoked', type: 'bool' },
     ],
     stateMutability: 'view',
     type: 'function',
@@ -30,6 +38,16 @@ export const CertificateRegistryABI = [
       { indexed: false, internalType: 'uint256', name: 'timestamp', type: 'uint256' },
     ],
     name: 'CertificateRegistered',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: false, internalType: 'string', name: 'certificateId', type: 'string' },
+      { indexed: true, internalType: 'address', name: 'revoker', type: 'address' },
+      { indexed: false, internalType: 'uint256', name: 'timestamp', type: 'uint256' },
+    ],
+    name: 'CertificateRevoked',
     type: 'event',
   },
 ] as const;

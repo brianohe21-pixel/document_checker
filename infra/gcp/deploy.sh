@@ -28,16 +28,17 @@ CONNECTION_NAME="$(gcloud sql instances describe "${GCP_SQL_INSTANCE}" --format=
 API_IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REPO}/api:${TAG}"
 WEB_IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GCP_ARTIFACT_REPO}/web:${TAG}"
 
-API_SECRETS="DATABASE_URL=certchain-database-url:latest,JWT_SECRET=certchain-jwt-secret:latest,ADMIN_EMAIL=certchain-admin-email:latest,ADMIN_PASSWORD=certchain-admin-password:latest,RPC_URL=certchain-rpc-url:latest,PRIVATE_KEY=certchain-private-key:latest,CONTRACT_ADDRESS=certchain-contract-address:latest"
+API_SECRETS="DATABASE_URL=certchain-database-url:latest,JWT_SECRET=certchain-jwt-secret:latest,ADMIN_EMAIL=certchain-admin-email:latest,ADMIN_PASSWORD=certchain-admin-password:latest,RPC_URL=certchain-rpc-url:latest,PRIVATE_KEY=certchain-private-key:latest,CONTRACT_ADDRESS=certchain-contract-address:latest,RESEND_API_KEY=certchain-resend-api-key:latest,EMAIL_FROM=certchain-email-from:latest"
 
 donate_substitutions() {
-  printf '_NEXT_PUBLIC_DONATE_GITHUB_URL=%s,_NEXT_PUBLIC_DONATE_CRYPTO_ADDRESS=%s,_NEXT_PUBLIC_DONATE_CRYPTO_LABEL=%s,_NEXT_PUBLIC_DONATE_KOFI_URL=%s,_NEXT_PUBLIC_CONTACT_NAME=%s,_NEXT_PUBLIC_CONTACT_WHATSAPP=%s' \
+  printf '_NEXT_PUBLIC_DONATE_GITHUB_URL=%s,_NEXT_PUBLIC_DONATE_CRYPTO_ADDRESS=%s,_NEXT_PUBLIC_DONATE_CRYPTO_LABEL=%s,_NEXT_PUBLIC_DONATE_KOFI_URL=%s,_NEXT_PUBLIC_CONTACT_NAME=%s,_NEXT_PUBLIC_CONTACT_WHATSAPP=%s,_NEXT_PUBLIC_ADMIN_URL=%s' \
     "${NEXT_PUBLIC_DONATE_GITHUB_URL:-}" \
     "${NEXT_PUBLIC_DONATE_CRYPTO_ADDRESS:-}" \
     "${NEXT_PUBLIC_DONATE_CRYPTO_LABEL:-}" \
     "${NEXT_PUBLIC_DONATE_KOFI_URL:-}" \
     "${NEXT_PUBLIC_CONTACT_NAME:-}" \
-    "${NEXT_PUBLIC_CONTACT_WHATSAPP:-}"
+    "${NEXT_PUBLIC_CONTACT_WHATSAPP:-}" \
+    "${ADMIN_URL:-http://localhost:3002}"
 }
 
 deploy_api() {
@@ -72,7 +73,7 @@ deploy_web() {
 update_api_cors() {
   gcloud run services update "${GCP_API_SERVICE}" \
     --region="${GCP_REGION}" \
-    --update-env-vars="CORS_ORIGIN=${1},PUBLIC_VERIFY_URL=${2}"
+    --update-env-vars="CORS_ORIGIN=${1},PUBLIC_VERIFY_URL=${2},EMAIL_FROM=${3:-CertChain <onboarding@resend.dev>}"
 }
 
 gcloud config set project "${GCP_PROJECT_ID}" --quiet
@@ -112,7 +113,10 @@ else
 
   PUBLIC_VERIFY_URL="${PUBLIC_VERIFY_URL:-${GCP_WEB_URL}/verify}"
   CORS_ORIGIN="${CORS_ORIGIN:-${GCP_WEB_URL}}"
-  update_api_cors "${CORS_ORIGIN}" "${PUBLIC_VERIFY_URL}"
+  if [[ -n "${ADMIN_URL:-}" ]]; then
+    CORS_ORIGIN="${CORS_ORIGIN},${ADMIN_URL}"
+  fi
+  update_api_cors "${CORS_ORIGIN}" "${PUBLIC_VERIFY_URL}" "${EMAIL_FROM:-}"
 
   echo "==> Building and pushing Web image..."
   gcloud builds submit \
@@ -125,7 +129,11 @@ else
 fi
 
 PUBLIC_VERIFY_URL="${GCP_WEB_URL}/verify"
-update_api_cors "${GCP_WEB_URL}" "${PUBLIC_VERIFY_URL}"
+FINAL_CORS="${GCP_WEB_URL}"
+if [[ -n "${ADMIN_URL:-}" ]]; then
+  FINAL_CORS="${FINAL_CORS},${ADMIN_URL}"
+fi
+update_api_cors "${FINAL_CORS}" "${PUBLIC_VERIFY_URL}" "${EMAIL_FROM:-}"
 
 echo ""
 echo "=========================================="
