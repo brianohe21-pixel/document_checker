@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { CertificateStatus } from '@certchain/shared';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class ListCertificatesDto {
   @ApiPropertyOptional({ default: 1 })
@@ -9,7 +9,7 @@ export class ListCertificatesDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  page?: number = 1;
+  page?: number;
 
   @ApiPropertyOptional({ default: 20 })
   @IsOptional()
@@ -17,10 +17,30 @@ export class ListCertificatesDto {
   @IsInt()
   @Min(1)
   @Max(100)
-  limit?: number = 20;
+  limit?: number;
 
   @ApiPropertyOptional({ enum: ['ACTIVE', 'REVOKED'] })
   @IsOptional()
   @IsEnum(['ACTIVE', 'REVOKED'])
   status?: CertificateStatus;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  courseName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  dateFrom?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  dateTo?: string;
 }

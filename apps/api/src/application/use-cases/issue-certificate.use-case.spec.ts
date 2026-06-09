@@ -6,14 +6,20 @@ import { BlockchainPort } from '../../domain/ports/blockchain.port';
 import { PdfGeneratorPort } from '../../domain/ports/pdf-generator.port';
 import { HashServicePort } from '../../domain/ports/hash.service.port';
 import { EmailPort } from '../../domain/ports/email.port';
+import { OrganizationRepositoryPort } from '../../domain/ports/organization.repository.port';
+import { TemplateRepositoryPort } from '../../domain/ports/template.repository.port';
+import { AuditLogRepositoryPort } from '../../domain/ports/audit-log.repository.port';
 import { Certificate } from '../../domain/entities/certificate.entity';
 
 jest.mock('uuid', () => ({ v4: () => 'test-uuid-1234' }));
+
+const ORG_ID = '00000000-0000-0000-0000-000000000001';
 
 function createCertificate(): Certificate {
   return new Certificate(
     'id-1',
     'test-uuid-1234',
+    ORG_ID,
     'Juan Perez',
     null,
     'Blockchain Fundamentals',
@@ -33,6 +39,7 @@ describe('IssueCertificateUseCase', () => {
 
   const mockRepo: CertificateRepositoryPort = {
     findByCertificateId: jest.fn(),
+    findByCertificateIdAndOrganization: jest.fn(),
     findByDocumentHash: jest.fn().mockResolvedValue(null),
     create: jest.fn().mockResolvedValue(createCertificate()),
     updateRevocation: jest.fn(),
@@ -57,6 +64,38 @@ describe('IssueCertificateUseCase', () => {
     sendCertificateEmail: jest.fn().mockResolvedValue(undefined),
   };
 
+  const mockOrg: OrganizationRepositoryPort = {
+    findAll: jest.fn(),
+    findById: jest.fn().mockResolvedValue({
+      id: ORG_ID,
+      name: 'Default',
+      slug: 'default',
+      logoUrl: null,
+      primaryColor: null,
+      verifyBaseUrl: null,
+      isActive: true,
+      createdAt: new Date(),
+    }),
+    findBySlug: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    toDto: jest.fn(),
+  };
+
+  const mockTemplate: TemplateRepositoryPort = {
+    findByOrganization: jest.fn(),
+    findById: jest.fn(),
+    findByIdAndOrganization: jest.fn(),
+    findDefault: jest.fn().mockResolvedValue(null),
+    create: jest.fn(),
+    update: jest.fn(),
+    toDto: jest.fn(),
+  };
+
+  const mockAudit: AuditLogRepositoryPort = {
+    create: jest.fn().mockResolvedValue(undefined),
+  };
+
   const configService = {
     get: jest.fn().mockReturnValue('http://localhost:3000/verify'),
   } as unknown as ConfigService;
@@ -67,6 +106,9 @@ describe('IssueCertificateUseCase', () => {
     mockPdf,
     mockHash,
     mockEmail,
+    mockTemplate,
+    mockOrg,
+    mockAudit,
     configService,
   );
 
@@ -76,13 +118,18 @@ describe('IssueCertificateUseCase', () => {
     issueDate: '2026-06-01',
   };
 
+  const context = {
+    organizationId: ORG_ID,
+    issuedByUserId: 'user-1',
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     (mockRepo.findByDocumentHash as jest.Mock).mockResolvedValue(null);
   });
 
   it('should issue certificate successfully', async () => {
-    const result = await useCase.execute(dto);
+    const result = await useCase.execute(dto, context);
     expect(result.certificateId).toBe('test-uuid-1234');
     expect(result.verificationUrl).toBe('http://localhost:3000/verify/test-uuid-1234');
     expect(result.transactionHash).toBe('0xtxhash');
@@ -94,7 +141,7 @@ describe('IssueCertificateUseCase', () => {
   });
 
   it('should send email when studentEmail is provided', async () => {
-    await useCase.execute({ ...dto, studentEmail: 'student@example.com' });
+    await useCase.execute({ ...dto, studentEmail: 'student@example.com' }, context);
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(mockEmail.sendCertificateEmail).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -107,12 +154,12 @@ describe('IssueCertificateUseCase', () => {
 
   it('should not fail issuance when email delivery fails', async () => {
     (mockEmail.sendCertificateEmail as jest.Mock).mockRejectedValueOnce(new Error('email failed'));
-    const result = await useCase.execute({ ...dto, studentEmail: 'student@example.com' });
+    const result = await useCase.execute({ ...dto, studentEmail: 'student@example.com' }, context);
     expect(result.certificateId).toBe('test-uuid-1234');
   });
 
   it('should reject duplicate document hash', async () => {
     (mockRepo.findByDocumentHash as jest.Mock).mockResolvedValueOnce(createCertificate());
-    await expect(useCase.execute(dto)).rejects.toThrow(ConflictException);
+    await expect(useCase.execute(dto, context)).rejects.toThrow(ConflictException);
   });
 });

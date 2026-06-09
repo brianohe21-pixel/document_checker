@@ -4,10 +4,13 @@ import { Certificate } from '../../domain/entities/certificate.entity';
 import { CertificateRepositoryPort } from '../../domain/ports/certificate.repository.port';
 import { BlockchainPort } from '../../domain/ports/blockchain.port';
 
+const ORG_ID = '00000000-0000-0000-0000-000000000001';
+
 function createCertificate(overrides: Partial<Record<string, unknown>> = {}) {
   return new Certificate(
     'uuid-1',
     'cert-uuid',
+    ORG_ID,
     'Juan Perez',
     null,
     'Blockchain Fundamentals',
@@ -27,6 +30,7 @@ describe('VerifyCertificateUseCase', () => {
 
   const mockRepo: CertificateRepositoryPort = {
     findByCertificateId: jest.fn().mockResolvedValue(certificate),
+    findByCertificateIdAndOrganization: jest.fn(),
     findByDocumentHash: jest.fn(),
     create: jest.fn(),
     updateRevocation: jest.fn(),

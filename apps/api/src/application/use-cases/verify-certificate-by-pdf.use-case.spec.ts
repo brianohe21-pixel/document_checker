@@ -11,6 +11,7 @@ describe('VerifyCertificateByPdfUseCase', () => {
   const certificate = new Certificate(
     'uuid-1',
     'cert-uuid',
+    '00000000-0000-0000-0000-000000000001',
     'Juan Perez',
     null,
     'Blockchain Fundamentals',
@@ -26,6 +27,7 @@ describe('VerifyCertificateByPdfUseCase', () => {
 
   const mockRepo: CertificateRepositoryPort = {
     findByCertificateId: jest.fn(),
+    findByCertificateIdAndOrganization: jest.fn(),
     findByDocumentHash: jest.fn().mockResolvedValue(certificate),
     create: jest.fn(),
     updateRevocation: jest.fn(),

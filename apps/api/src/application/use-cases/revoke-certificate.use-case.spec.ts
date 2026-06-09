@@ -3,11 +3,15 @@ import { RevokeCertificateUseCase } from './revoke-certificate.use-case';
 import { Certificate } from '../../domain/entities/certificate.entity';
 import { CertificateRepositoryPort } from '../../domain/ports/certificate.repository.port';
 import { BlockchainPort } from '../../domain/ports/blockchain.port';
+import { AuditLogRepositoryPort } from '../../domain/ports/audit-log.repository.port';
+
+const ORG_ID = '00000000-0000-0000-0000-000000000001';
 
 describe('RevokeCertificateUseCase', () => {
   const activeCertificate = new Certificate(
     'uuid-1',
     'cert-uuid',
+    ORG_ID,
     'Juan Perez',
     null,
     'Blockchain Fundamentals',
@@ -24,6 +28,7 @@ describe('RevokeCertificateUseCase', () => {
   const revokedCertificate = new Certificate(
     'uuid-1',
     'cert-uuid',
+    ORG_ID,
     'Juan Perez',
     null,
     'Blockchain Fundamentals',
@@ -38,7 +43,8 @@ describe('RevokeCertificateUseCase', () => {
   );
 
   const mockRepo: CertificateRepositoryPort = {
-    findByCertificateId: jest.fn().mockResolvedValue(activeCertificate),
+    findByCertificateId: jest.fn(),
+    findByCertificateIdAndOrganization: jest.fn().mockResolvedValue(activeCertificate),
     findByDocumentHash: jest.fn(),
     create: jest.fn(),
     updateRevocation: jest.fn().mockResolvedValue(revokedCertificate),
@@ -51,10 +57,21 @@ describe('RevokeCertificateUseCase', () => {
     verifyCertificate: jest.fn(),
   };
 
-  const useCase = new RevokeCertificateUseCase(mockRepo, mockBlockchain);
+  const mockAudit: AuditLogRepositoryPort = {
+    create: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const useCase = new RevokeCertificateUseCase(mockRepo, mockBlockchain, mockAudit);
+
+  const user = {
+    userId: 'user-1',
+    email: 'admin@test.com',
+    organizationId: ORG_ID,
+    role: 'ORG_ADMIN' as const,
+  };
 
   it('should revoke certificate successfully', async () => {
-    const result = await useCase.execute('cert-uuid', { reason: 'Issued in error' });
+    const result = await useCase.execute(user, 'cert-uuid', { reason: 'Issued in error' });
     expect(result.status).toBe('REVOKED');
     expect(result.revokeTransactionHash).toBe('0xrevoketx');
     expect(mockBlockchain.revokeCertificate).toHaveBeenCalledWith('cert-uuid');
@@ -62,13 +79,17 @@ describe('RevokeCertificateUseCase', () => {
   });
 
   it('should throw when certificate not found', async () => {
-    (mockRepo.findByCertificateId as jest.Mock).mockResolvedValueOnce(null);
-    await expect(useCase.execute('unknown', { reason: 'test' })).rejects.toThrow(NotFoundException);
+    (mockRepo.findByCertificateIdAndOrganization as jest.Mock).mockResolvedValueOnce(null);
+    await expect(useCase.execute(user, 'unknown', { reason: 'test' })).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('should throw when already revoked', async () => {
-    (mockRepo.findByCertificateId as jest.Mock).mockResolvedValueOnce(revokedCertificate);
-    await expect(useCase.execute('cert-uuid', { reason: 'test' })).rejects.toThrow(
+    (mockRepo.findByCertificateIdAndOrganization as jest.Mock).mockResolvedValueOnce(
+      revokedCertificate,
+    );
+    await expect(useCase.execute(user, 'cert-uuid', { reason: 'test' })).rejects.toThrow(
       ConflictException,
     );
   });

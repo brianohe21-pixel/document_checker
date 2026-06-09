@@ -2,6 +2,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { LoginUseCase } from './login.use-case';
 import { UserRepositoryPort } from '../../domain/ports/user.repository.port';
+import { MembershipRepositoryPort } from '../../domain/ports/membership.repository.port';
 import { User } from '../../domain/entities/user.entity';
 
 jest.mock('bcrypt', () => ({
@@ -12,16 +13,40 @@ import * as bcrypt from 'bcrypt';
 
 describe('LoginUseCase', () => {
   const user = new User('user-1', 'admin@test.com', 'hashed', new Date());
+  const ORG_ID = '00000000-0000-0000-0000-000000000001';
 
   const mockRepo: UserRepositoryPort = {
     findByEmail: jest.fn().mockResolvedValue(user),
+    findById: jest.fn(),
+    create: jest.fn(),
+  };
+
+  const mockMembership: MembershipRepositoryPort = {
+    findByUserId: jest.fn().mockResolvedValue([
+      {
+        id: 'mem-1',
+        userId: 'user-1',
+        organizationId: ORG_ID,
+        role: 'SUPER_ADMIN',
+        email: 'admin@test.com',
+        createdAt: new Date(),
+      },
+    ]),
+    findByUserAndOrganization: jest.fn(),
+    findByUserAndSlug: jest.fn(),
+    findByOrganization: jest.fn(),
+    create: jest.fn(),
+    updateRole: jest.fn(),
+    toOrganizationSummaries: jest
+      .fn()
+      .mockResolvedValue([{ id: ORG_ID, name: 'Default', slug: 'default', role: 'SUPER_ADMIN' }]),
   };
 
   const mockJwt = {
     signAsync: jest.fn().mockResolvedValue('jwt-token'),
   } as unknown as JwtService;
 
-  const useCase = new LoginUseCase(mockRepo, mockJwt);
+  const useCase = new LoginUseCase(mockRepo, mockMembership, mockJwt);
 
   beforeEach(() => {
     jest.clearAllMocks();

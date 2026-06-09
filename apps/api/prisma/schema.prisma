@@ -12,29 +12,159 @@ enum CertificateStatus {
   REVOKED
 }
 
+enum MembershipRole {
+  SUPER_ADMIN
+  ORG_ADMIN
+  ISSUER
+  VIEWER
+}
+
+enum BulkJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum BulkJobItemStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id           String       @id @default(uuid()) @db.Uuid
+  email        String       @unique
+  passwordHash String       @map("password_hash")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  memberships  Membership[]
+  issuedCerts  Certificate[] @relation("IssuedBy")
+  bulkJobs     BulkJob[]
+  auditLogs    AuditLog[]
 
   @@map("users")
 }
 
-model Certificate {
-  id                    String            @id @default(uuid()) @db.Uuid
-  certificateId         String            @unique @map("certificate_id")
-  studentName           String            @map("student_name")
-  studentEmail          String?           @map("student_email")
-  courseName            String            @map("course_name")
-  issueDate             DateTime          @map("issue_date") @db.Date
-  documentHash          String            @map("document_hash")
-  transactionHash       String            @map("transaction_hash")
-  status                CertificateStatus @default(ACTIVE)
-  revokedAt             DateTime?         @map("revoked_at")
-  revokedReason         String?           @map("revoked_reason")
-  revokeTransactionHash String?           @map("revoke_transaction_hash")
-  createdAt             DateTime          @default(now()) @map("created_at")
+model Organization {
+  id            String                @id @default(uuid()) @db.Uuid
+  name          String
+  slug          String                @unique
+  logoUrl       String?               @map("logo_url")
+  primaryColor  String?               @map("primary_color")
+  verifyBaseUrl String?               @map("verify_base_url")
+  isActive      Boolean               @default(true) @map("is_active")
+  createdAt     DateTime              @default(now()) @map("created_at")
+  memberships   Membership[]
+  certificates  Certificate[]
+  templates     CertificateTemplate[]
+  bulkJobs      BulkJob[]
+  auditLogs     AuditLog[]
 
+  @@map("organizations")
+}
+
+model Membership {
+  id             String         @id @default(uuid()) @db.Uuid
+  userId         String         @map("user_id") @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  role           MembershipRole
+  createdAt      DateTime       @default(now()) @map("created_at")
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@map("memberships")
+}
+
+model CertificateTemplate {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String        @map("organization_id") @db.Uuid
+  name           String
+  config         Json
+  isDefault      Boolean       @default(false) @map("is_default")
+  version        Int           @default(1)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  certificates   Certificate[]
+
+  @@index([organizationId])
+  @@map("certificate_templates")
+}
+
+model Certificate {
+  id                    String              @id @default(uuid()) @db.Uuid
+  certificateId         String              @unique @map("certificate_id")
+  organizationId        String              @map("organization_id") @db.Uuid
+  templateId            String?             @map("template_id") @db.Uuid
+  issuedByUserId        String?             @map("issued_by_user_id") @db.Uuid
+  studentName           String              @map("student_name")
+  studentEmail          String?             @map("student_email")
+  courseName            String              @map("course_name")
+  issueDate             DateTime            @map("issue_date") @db.Date
+  documentHash          String              @map("document_hash")
+  transactionHash       String              @map("transaction_hash")
+  status                CertificateStatus   @default(ACTIVE)
+  revokedAt             DateTime?           @map("revoked_at")
+  revokedReason         String?             @map("revoked_reason")
+  revokeTransactionHash String?             @map("revoke_transaction_hash")
+  createdAt             DateTime            @default(now()) @map("created_at")
+  organization          Organization        @relation(fields: [organizationId], references: [id])
+  template              CertificateTemplate? @relation(fields: [templateId], references: [id])
+  issuedBy              User?               @relation("IssuedBy", fields: [issuedByUserId], references: [id])
+
+  @@index([organizationId, createdAt])
   @@map("certificates")
+}
+
+model BulkJob {
+  id             String         @id @default(uuid()) @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  status         BulkJobStatus  @default(PENDING)
+  totalRows      Int            @map("total_rows")
+  processedRows  Int            @default(0) @map("processed_rows")
+  failedRows     Int            @default(0) @map("failed_rows")
+  fileName       String?        @map("file_name")
+  createdByUserId String        @map("created_by_user_id") @db.Uuid
+  createdAt      DateTime       @default(now()) @map("created_at")
+  completedAt    DateTime?      @map("completed_at")
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  createdBy      User           @relation(fields: [createdByUserId], references: [id])
+  items          BulkJobItem[]
+
+  @@index([organizationId, status])
+  @@map("bulk_jobs")
+}
+
+model BulkJobItem {
+  id            String            @id @default(uuid()) @db.Uuid
+  bulkJobId     String            @map("bulk_job_id") @db.Uuid
+  rowNumber     Int               @map("row_number")
+  payload       Json
+  status        BulkJobItemStatus @default(PENDING)
+  certificateId String?           @map("certificate_id")
+  error         String?
+  bulkJob       BulkJob           @relation(fields: [bulkJobId], references: [id], onDelete: Cascade)
+
+  @@index([bulkJobId])
+  @@map("bulk_job_items")
+}
+
+model AuditLog {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @map("organization_id") @db.Uuid
+  userId         String       @map("user_id") @db.Uuid
+  action         String
+  entityType     String       @map("entity_type")
+  entityId       String       @map("entity_id")
+  metadata       Json?
+  createdAt      DateTime     @default(now()) @map("created_at")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@map("audit_logs")
 }

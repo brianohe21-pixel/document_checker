@@ -33,6 +33,8 @@ export function buildVerifyResponse(
     blockchain: BLOCKCHAIN_NAME,
     transactionHash: certificate.transactionHash,
     certificateId: certificate.certificateId,
+    organizationName: certificate.organizationName,
+    organizationLogoUrl: certificate.organizationLogoUrl ?? undefined,
   };
 }
 

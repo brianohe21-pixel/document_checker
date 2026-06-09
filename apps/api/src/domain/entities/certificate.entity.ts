@@ -4,6 +4,7 @@ export class Certificate {
   constructor(
     public readonly id: string,
     public readonly certificateId: string,
+    public readonly organizationId: string,
     public readonly studentName: string,
     public readonly studentEmail: string | null,
     public readonly courseName: string,
@@ -15,5 +16,8 @@ export class Certificate {
     public readonly revokedReason: string | null,
     public readonly revokeTransactionHash: string | null,
     public readonly createdAt: Date,
+    public readonly organizationName?: string,
+    public readonly organizationLogoUrl?: string | null,
+    public readonly issuedByEmail?: string | null,
   ) {}
 }

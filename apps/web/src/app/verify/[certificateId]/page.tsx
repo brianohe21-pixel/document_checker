@@ -41,6 +41,18 @@ export default async function VerifyPage({ params }: VerifyPageProps) {
       </h1>
 
       <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+        {data.organizationName && (
+          <div className="mb-6 flex flex-col items-center gap-2 border-b border-gray-100 pb-6">
+            {data.organizationLogoUrl && (
+              <img
+                src={data.organizationLogoUrl}
+                alt={data.organizationName}
+                className="h-16 object-contain"
+              />
+            )}
+            <p className="text-sm font-medium text-gray-600">Issued by {data.organizationName}</p>
+          </div>
+        )}
         <div className="mb-6 text-center">
           <VerificationBadge valid={data.valid} status={data.status} />
         </div>

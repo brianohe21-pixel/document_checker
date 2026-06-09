@@ -294,11 +294,11 @@ The commercial admin UI lives in the separate `document_checker_adm` repository 
 ```bash
 cd ../document_checker_adm
 cp .env.example .env
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
-For local development against unpublished shared types, use `npm link` — see `document_checker_adm/.env.example`.
+For local development against unpublished shared types, use `pnpm link` — see `document_checker_adm/.env.example`.
 
 Redeploy the smart contract after upgrading to v2 (revocation support) and update `CONTRACT_ADDRESS`. Certificates issued on the previous contract cannot be revoked on-chain.
 

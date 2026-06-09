@@ -1,23 +1,28 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsEmail, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 
 export class IssueCertificateDto {
-  @ApiProperty({ example: 'Juan Perez' })
+  @ApiProperty()
   @IsString()
-  @IsNotEmpty()
+  @MinLength(1)
   studentName!: string;
 
-  @ApiProperty({ example: 'Blockchain Fundamentals' })
+  @ApiProperty()
   @IsString()
-  @IsNotEmpty()
+  @MinLength(1)
   courseName!: string;
 
-  @ApiProperty({ example: '2026-06-01' })
+  @ApiProperty({ example: '2025-06-09' })
   @IsDateString()
   issueDate!: string;
 
-  @ApiPropertyOptional({ example: 'student@example.com' })
+  @ApiPropertyOptional()
   @IsOptional()
   @IsEmail()
   studentEmail?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  templateId?: string;
 }

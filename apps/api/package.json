@@ -36,6 +36,9 @@
     "reflect-metadata": "^0.2.2",
     "resend": "^4.0.1",
     "rxjs": "^7.8.1",
+    "@nestjs/bullmq": "^10.2.3",
+    "bullmq": "^5.34.5",
+    "ioredis": "^5.4.2",
     "multer": "^1.4.5-lts.1",
     "uuid": "^11.0.3"
   },

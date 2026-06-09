@@ -12,15 +12,19 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
+import { AuthenticatedUser } from '../../domain/auth/auth-context';
 import { IssueCertificateUseCase } from '../../application/use-cases/issue-certificate.use-case';
 import { ListCertificatesUseCase } from '../../application/use-cases/list-certificates.use-case';
 import { RevokeCertificateUseCase } from '../../application/use-cases/revoke-certificate.use-case';
 import { VerifyCertificateByPdfUseCase } from '../../application/use-cases/verify-certificate-by-pdf.use-case';
 import { VerifyCertificateUseCase } from '../../application/use-cases/verify-certificate.use-case';
+import { CurrentUser } from '../decorators/current-user.decorator';
+import { Roles } from '../decorators/roles.decorator';
 import { IssueCertificateDto } from '../dto/issue-certificate.dto';
 import { ListCertificatesDto } from '../dto/list-certificates.dto';
 import { RevokeCertificateDto } from '../dto/revoke-certificate.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { RolesGuard } from '../guards/roles.guard';
 
 const MAX_PDF_SIZE = 10 * 1024 * 1024;
 
@@ -36,27 +40,45 @@ export class CertificatesController {
   ) {}
 
   @Post('certificates')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ORG_ADMIN', 'ISSUER')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Issue a new certificate' })
-  issue(@Body() dto: IssueCertificateDto) {
-    return this.issueCertificateUseCase.execute(dto);
+  issue(@CurrentUser() user: AuthenticatedUser, @Body() dto: IssueCertificateDto) {
+    return this.issueCertificateUseCase.execute(dto, {
+      organizationId: user.organizationId,
+      issuedByUserId: user.userId,
+    });
   }
 
   @Get('certificates')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ORG_ADMIN', 'ISSUER', 'VIEWER')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List certificates (admin)' })
-  list(@Query() query: ListCertificatesDto) {
-    return this.listCertificatesUseCase.execute(query.page ?? 1, query.limit ?? 20, query.status);
+  list(@CurrentUser() user: AuthenticatedUser, @Query() query: ListCertificatesDto) {
+    return this.listCertificatesUseCase.execute(user, {
+      page: query.page ?? 1,
+      limit: query.limit ?? 20,
+      status: query.status,
+      search: query.search,
+      courseName: query.courseName,
+      dateFrom: query.dateFrom,
+      dateTo: query.dateTo,
+    });
   }
 
   @Post('certificates/:certificateId/revoke')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ORG_ADMIN')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Revoke a certificate' })
-  revoke(@Param('certificateId') certificateId: string, @Body() dto: RevokeCertificateDto) {
-    return this.revokeCertificateUseCase.execute(certificateId, dto);
+  revoke(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('certificateId') certificateId: string,
+    @Body() dto: RevokeCertificateDto,
+  ) {
+    return this.revokeCertificateUseCase.execute(user, certificateId, dto);
   }
 
   @Get('verify/:certificateId')
